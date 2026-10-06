@@ -72,14 +72,20 @@
   drawer.setAttribute('aria-labelledby', 'drawer-title');
   drawer.innerHTML = `
     <div class="drawer-head">
-      <h2 id="drawer-title">Lista de orçamento</h2>
+      <h2 id="drawer-title" tabindex="-1">Lista de orçamento</h2>
       <button class="icon-btn" type="button" data-close aria-label="Fechar">${ico.close}</button>
     </div>
     <div class="drawer-body"><div class="q-list"></div></div>
     <form class="drawer-foot" novalidate>
-      <div class="field">
-        <label for="q-nome">Seu nome e cidade</label>
-        <input id="q-nome" name="nome" placeholder="Ex.: João, Uberaba/MG" autocomplete="name">
+      <div class="q-dados">
+        <div class="field">
+          <label for="q-nome">Nome</label>
+          <input id="q-nome" name="nome" placeholder="Ex.: João" autocomplete="name" autocapitalize="words">
+        </div>
+        <div class="field">
+          <label for="q-cidade">Cidade/UF</label>
+          <input id="q-cidade" name="cidade" placeholder="Ex.: Uberaba/MG" autocomplete="address-level2" autocapitalize="words">
+        </div>
       </div>
       <div class="field">
         <span class="label">Enviar para</span>
@@ -92,6 +98,17 @@
     </form>`;
   document.body.appendChild(drawer);
 
+  // Lembra nome e cidade para o próximo pedido (só neste navegador)
+  const DADOS_KEY = 'pt-cliente';
+  function salvarDados(nome, cidade) {
+    try { localStorage.setItem(DADOS_KEY, JSON.stringify({ nome, cidade })); } catch (e) { /* sem storage */ }
+  }
+  try {
+    const d = JSON.parse(localStorage.getItem(DADOS_KEY)) || {};
+    drawer.querySelector('#q-nome').value = d.nome || '';
+    drawer.querySelector('#q-cidade').value = d.cidade || '';
+  } catch (e) { /* sem storage */ }
+
   const list = drawer.querySelector('.q-list');
   let lastFocus = null;
 
@@ -99,7 +116,7 @@
     lastFocus = document.activeElement;
     document.body.classList.add('drawer-open');
     render();
-    setTimeout(() => drawer.querySelector('[data-close]').focus(), 50);
+    setTimeout(() => drawer.querySelector('#drawer-title').focus({ preventScroll: true }), 50);
   }
   function closeDrawer() {
     document.body.classList.remove('drawer-open');
@@ -157,13 +174,17 @@
     e.preventDefault();
     const f = e.target;
     const nome = f.nome.value.trim();
-    let msg = 'Olá! Vim pelo site da Pregos Triângulo';
-    msg += nome ? `. Sou ${nome}.` : '.';
+    const cidade = f.cidade.value.trim();
+    salvarDados(nome, cidade);
+    let msg = 'Olá! Vim pelo site da Pregos Triângulo.\n';
+    if (nome || cidade) msg += '\n';
+    if (nome) msg += `*Nome:* ${nome}\n`;
+    if (cidade) msg += `*Cidade:* ${cidade}\n`;
     if (itens.length) {
-      msg += '\n\nGostaria de um orçamento para:\n';
+      msg += '\n*Gostaria de um orçamento para:*\n';
       msg += itens.map(it => `- ${it.categoria} ${it.medida}: ${it.qtd} ${it.un}`).join('\n');
     } else {
-      msg += ' Gostaria de fazer um orçamento.';
+      msg += '\nGostaria de fazer um orçamento.';
     }
     abrirWhatsApp(f.vend.value, msg);
   });
