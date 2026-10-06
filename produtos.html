@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=5f7cd166">
+  <link rel="stylesheet" href="css/style.css?v=24f577e7">
 </head>
 <body>
 <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -163,9 +163,9 @@
   </div>
 </footer>
 
-<script src="js/catalogo.js?v=5f7cd166"></script>
-<script src="js/ilustracoes.js?v=5f7cd166"></script>
-<script src="js/main.js?v=5f7cd166"></script>
+<script src="js/catalogo.js?v=24f577e7"></script>
+<script src="js/ilustracoes.js?v=24f577e7"></script>
+<script src="js/main.js?v=24f577e7"></script>
 <script>
   (function () {
     const chips = document.getElementById('chips');
@@ -233,12 +233,46 @@
       filtro = id;
       chips.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === id));
       const ativo = chips.querySelector(`[data-cat="${id}"]`);
-      if (ativo) chips.scrollLeft = ativo.offsetLeft - (chips.clientWidth - ativo.offsetWidth) / 2;
+      // Só rola a faixa se o filtro escolhido estiver fora da área visível
+      if (ativo) {
+        const ini = ativo.offsetLeft - chips.offsetLeft, fim = ini + ativo.offsetWidth;
+        if (ini < chips.scrollLeft || fim > chips.scrollLeft + chips.clientWidth) {
+          chips.scrollLeft = ini - (chips.clientWidth - ativo.offsetWidth) / 2;
+        }
+      }
       render();
       if (rolar) window.scrollTo({ top: document.querySelector('.catalog-tools').offsetTop - 68, behavior: 'smooth' });
     }
 
+    // Arrastar com o mouse e rolar com a rodinha (no desktop a barra fica escondida)
+    let arrasto = null, arrastou = false;
+    chips.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      arrasto = { x: e.clientX, scroll: chips.scrollLeft };
+      arrastou = false;
+    });
+    window.addEventListener('pointermove', e => {
+      if (!arrasto) return;
+      const dx = e.clientX - arrasto.x;
+      if (Math.abs(dx) > 4) { arrastou = true; chips.classList.add('arrastando'); }
+      if (arrastou) chips.scrollLeft = arrasto.scroll - dx;
+    });
+    window.addEventListener('pointerup', () => { arrasto = null; chips.classList.remove('arrastando'); });
+    chips.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || chips.scrollWidth <= chips.clientWidth) return;
+      const antes = chips.scrollLeft;
+      chips.scrollLeft += e.deltaY;
+      if (chips.scrollLeft !== antes) e.preventDefault();
+    }, { passive: false });
+    function atualizarSombras() {
+      chips.classList.toggle('mais-esq', chips.scrollLeft > 2);
+      chips.classList.toggle('mais-dir', chips.scrollLeft + chips.clientWidth < chips.scrollWidth - 2);
+    }
+    chips.addEventListener('scroll', atualizarSombras, { passive: true });
+    window.addEventListener('resize', atualizarSombras);
+
     chips.addEventListener('click', e => {
+      if (arrastou) { e.preventDefault(); arrastou = false; return; }
       const b = e.target.closest('.chip');
       if (!b) return;
       history.replaceState(null, '', b.dataset.cat === 'todos' ? location.pathname : '#' + b.dataset.cat);
@@ -263,6 +297,7 @@
     }
     window.addEventListener('hashchange', pelaUrl);
     pelaUrl();
+    atualizarSombras();
   })();
 </script>
 </body>

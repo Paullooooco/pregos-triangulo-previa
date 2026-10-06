@@ -420,3 +420,15 @@ p { margin: 0; }
   .foot-col { order: 2; }
   .foot-prods ul { grid-template-columns: 1fr 1fr; column-gap: 16px; }
 }
+
+/* Filtros: espaço para o contorno de foco não ser cortado pela rolagem */
+.chips { padding: 5px 4px; margin: -5px -4px; scroll-padding-inline: 8px; }
+.chip:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.chip:focus:not(:focus-visible) { outline: none; }
+.chips { cursor: grab; user-select: none; }
+.chips.arrastando { cursor: grabbing; }
+.chips.arrastando .chip { pointer-events: none; }
+/* Indica que há mais filtros escondidos para os lados */
+.chips.mais-dir { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.chips.mais-esq { -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%); mask-image: linear-gradient(90deg, transparent, #000 15%); }
+.chips.mais-esq.mais-dir { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
